@@ -1,12 +1,6 @@
- import os
-import logging
-from dotenv import load_dotenv
+ import logging
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
-
-# Завантажуємо токен з .env файлу
-load_dotenv()
-TOKEN = os.getenv("8857921196:AAFeu3bG_Sr9050coijFk7yjrZdmu6I0INE")
 
 # Налаштування логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -51,14 +45,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Твоя дія: Обійми людину, яка сидить найближче до тебе.")
 
 if __name__ == '__main__':
-    if not TOKEN:
-        print("Помилка: Токен не знайдено. Перевір файл .env")
-    else:
-        app = ApplicationBuilder().token(TOKEN).build()
+    # Токен вставлено напряму
+    TOKEN = "8857921196:AAFeu3bG_Sr9050coijFk7yjrZdmu6I0INE"
+    
+    app = ApplicationBuilder().token(TOKEN).build()
 
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        app.add_handler(CallbackQueryHandler(button_callback))
-        
-        print("Бот успішно запущений...")
-        app.run_polling()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CallbackQueryHandler(button_callback))
+    
+    print("Бот успішно запущений...")
+    app.run_polling()
