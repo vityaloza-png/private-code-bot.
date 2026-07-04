@@ -2,13 +2,20 @@ import os
 import logging
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder, 
+    CommandHandler, 
+    CallbackQueryHandler, 
+    MessageHandler, 
+    filters, 
+    ContextTypes
+)
 
+# Налаштування логів
 logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
 
 games = {}
-
 QUESTIONS = ["Найнезручніший момент?", "Твоя мрія?", "Чого ти боїшся?"]
 DARES = ["Обійми сусіда", "Зроби 5 присідань", "Розкажи секрет"]
 
@@ -27,7 +34,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
     
-    # 1. Режим 'На відстані'
     if query.data == 'mode_distance':
         games[chat_id] = {"mode": "distance", "status": "waiting_for_second_player", "asker_id": None}
         await query.message.edit_text(
@@ -35,7 +41,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Другий гравець, натисни кнопку, щоб увійти в гру!",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися до гри", callback_data='join_game')]]))
 
-    # 2. Приєднання до гри
     elif query.data == 'join_game':
         game = games.get(chat_id)
         if game:
@@ -46,7 +51,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Тепер можна починати:",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_task')]]))
 
-    # 3. Вибір типу завдання
     elif query.data == 'ask_task':
         game = games.get(chat_id)
         if game:
@@ -54,7 +58,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
             await query.message.edit_text("Обирай завдання для іншого гравця:", reply_markup=InlineKeyboardMarkup(kb))
 
-    # 4. Обробка вибраного завдання
     elif query.data in ['truth', 'dare']:
         game = games.get(chat_id)
         if game:
@@ -74,9 +77,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⛔️ Ти запитувач! Чекай, поки інший гравець напише відповідь.")
         return
 
-    # Відповідь отримана
     game["status"] = "idle"
     game["asker_id"] = user_id 
     
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Наступне запитання", callback_data='ask_task')]])
     await update.message.reply_text(f"✅ Відповідь прийнято: {update.message.text}\n\nТепер черга {update.effective_user.first_name} задавати питання!", reply_markup=kb)
+
+# --- ОСНОВНИЙ ЗАПУСК (ось це критично важливо!) ---
+if __name__ == '__main__':
+    if not TOKEN:
+        print("ПОМИЛКА: Не знайдено TOKEN у змінних середовища!")
+    else:
+        app = ApplicationBuilder().token(TOKEN).build()
+        app.add_handler(CommandHandler("start", start))
+        app.add_handler(CallbackQueryHandler(button_callback))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        
+        print("Бот запущений!")
+        app.run_polling()
