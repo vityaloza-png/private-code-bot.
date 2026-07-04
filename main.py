@@ -1,49 +1,74 @@
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import random
-import threading
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from questions import truths, dares
 
-def run_http_server():
-    server = HTTPServer(('0.0.0.0', 8080), SimpleHTTPRequestHandler)
-    server.serve_forever()
-
-threading.Thread(target=run_http_server, daemon=True).start()
-
-# Встав сюди свій НОВИЙ токен (який ти отримав після /revoke)
-TOKEN = '8671245475:AAFEslZmW0ih6hYQm0wupTd3SVqoyzdvFm8'
-
-# База питань (можеш сюди вписати будь-яку кількість)
-questions = [
-    "Який твій найулюбленіший спогад про нашу першу зустріч?",
-    "Яку рису мого характеру ти цінуєш понад усе?",
-    "Якби ми могли поїхати в подорож прямо зараз, куди б ти хотів(ла) вирушити?",
-    "Який фільм у тебе асоціюється зі мною?",
-    "Розкажи про момент, коли ти зрозумів(ла), що ми — ідеальна пара.",
-    "Який найприємніший комплімент ти отримував(ла) від мене?"
-]
+# Глобальні змінні для зберігання пари
+waiting_player = None
+players_map = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = [['🎯 Нове питання', '🔄 Статистика'], ['💬 Режим спілкування']]
-    await update.message.reply_text(
-        "✨ Private Code активовано. Обирай дію:", 
-        reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True)
-    )
-
-async def game(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
+    global waiting_player, players_map
+    user_id = update.effective_user.id
     
-    if text == '🎯 Нове питання':
-        await update.message.reply_text(f"❓ Питання: {random.choice(questions)}")
-        
-    elif text == '🔄 Статистика':
-        await update.message.reply_text("Ми продовжуємо дізнаватися одне одного краще!")
-        
-    elif text == '💬 Режим спілкування':
-        await update.message.reply_text("Режим чату увімкнено. Пишіть, я не втручаюся!")
+    if user_id in players_map:
+        await update.message.reply_text("Ви вже в грі! Щоб зупинити, натисніть /stop")
+        return
 
-if __name__ == '__main__':
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler('start', start))
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), game))
-    app.run_polling()
+    if waiting_player is None:
+        waiting_player = user_id
+        await update.message.reply_text("Чекаю на другого гравця...")
+    else:
+        partner_id = waiting_player
+        players_map[user_id] = partner_id
+        players_map[partner_id] = user_id
+        waiting_player = None 
+        
+        keyboard = [
+            [InlineKeyboardButton("На відстані (Тільки питання)", callback_data="far_truth")],
+            [InlineKeyboardButton("Поряд (Питання + Дії)", callback_data="near_all")]
+        ]
+        msg = "Партнер знайшовся! Оберіть формат гри:"
+        await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
+        await context.bot.send_message(chat_id=partner_id, text=msg, reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global waiting_player, players_map
+    user_id = update.effective_user.id
+    
+    if user_id in players_map:
+        partner_id = players_map[user_id]
+        del players_map[user_id]
+        del players_map[partner_id]
+        await update.message.reply_text("Гру зупинено. Кеш очищено.")
+        await context.bot.send_message(chat_id=partner_id, text="Партнер зупинив гру. Кеш очищено.")
+    elif waiting_player == user_id:
+        waiting_player = None
+        await update.message.reply_text("Пошук партнера скасовано.")
+    else:
+        await update.message.reply_text("Ви зараз не в грі.")
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    sender_id = update.effective_user.id
+    partner_id = players_map.get(sender_id)
+    
+    if not partner_id:
+        await query.edit_message_text("Помилка: партнер не знайдений. Натисніть /start")
+        return
+
+    mode = query.data
+    if "far" in mode:
+        text = f"Питання: {random.choice(truths)}"
+        await context.bot.send_message(chat_id=partner_id, text=text)
+        await query.edit_message_text("Питання успішно відправлено партнеру!")
+    else:
+        text = f"Завдання для вас двох:\n\n{random.choice(truths + dares)}"
+        await query.edit_message_text(text)
+
+app = Application.builder().token("ТВІЙ_ТОКЕН").build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("stop", stop))
+app.add_handler(CallbackQueryHandler(button_handler))
+app.run_polling()
