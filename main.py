@@ -31,14 +31,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
 
-        if query.data == 'mode_distance':
+    if query.data == 'mode_distance':
         # Створюємо сесію, але поки ніхто не "Запитувач"
         games[chat_id] = {"mode": "distance", "status": "waiting_for_second_player", "asker_id": None}
         await query.message.edit_text(
             "🌐 Режим 'На відстані'.\n\nГра створена! Чекаємо другого гравця.\n"
             "Другий гравець, натисни кнопку, щоб увійти в гру!",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися до гри", callback_data='join_game')]])
-        )
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися до гри", callback_data='join_game')]]))
+
 
     elif query.data == 'join_game':
         game = games.get(chat_id)
