@@ -15,7 +15,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     # 1. Початок гри (Створення сесії)
-        if query.data == 'start_game':
+    if query.data == 'start_game':
         games[chat_id] = {"players": [user_id], "status": "waiting_for_second"}
         await query.message.edit_text(
             "Сесію створено! Чекаємо другого гравця.\nДругий гравець, натисни кнопку нижче!",
