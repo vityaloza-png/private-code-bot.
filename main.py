@@ -14,6 +14,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
 
+# --- Налаштування ---
+logging.basicConfig(level=logging.INFO)
+TOKEN = os.environ.get("TOKEN")
+
     # 1. Початок гри (Створення сесії)
     if query.data == 'start_game':
         games[chat_id] = {"players": [user_id], "status": "waiting_for_second"}
@@ -32,11 +36,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         game["players"].append(user_id)
         game["status"] = "idle"
         await query.message.edit_text("Гру    розпочато! Обидва гравці в мережі.", 
-
-
-# --- Налаштування ---
-logging.basicConfig(level=logging.INFO)
-TOKEN = os.environ.get("TOKEN")
 
 # --- Меню та функції ---
 main_menu = ReplyKeyboardMarkup([
