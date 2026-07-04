@@ -36,7 +36,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
         game["players"].append(user_id)
         game["status"] = "idle"
-        await query.message.edit_text("Гру    розпочато! Обидва гравці в мережі.", 
+        await query.message.edit_text("Гру    розпочато! Обидва гравці в мережі.",) 
 
     # --- Меню та функції ---
 main_menu = ReplyKeyboardMarkup([
