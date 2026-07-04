@@ -14,13 +14,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
 
-logging.basicConfig(level=logging.INFO)
-TOKEN = os.environ.get("TOKEN")
-
     # 1. Початок гри (Створення сесії)
     if query.data == 'start_game':
         games[chat_id] = {"players": [user_id], "status": "waiting_for_second"}
-        await query.message.edit_text("Сесію створено! Чекаємо другого гравця.\nДругий гравець, натисни кнопку нижче!",
+    await query.message.edit_text("Сесію створено! Чекаємо другого гравця.\nДругий гравець, натисни кнопку нижче!",
                                       reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися", callback_data='join_game')]]))
 
     # 2. Другий гравець приєднується
