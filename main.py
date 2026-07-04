@@ -40,8 +40,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == '__main__':
     # 8857921196:AAFeu3bG_Sr9050coijFk7yjrZdmu6I0INE
-    app = ApplicationBuilder().token("ВАШ_ТОКЕН_БОТА").build()
-    
+    app = ApplicationBuilder().token("8857921196:AAFeu3bG_Sr9050coijFk7yjrZdmu6I0INE").build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_callback))
