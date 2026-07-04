@@ -40,13 +40,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися до гри", callback_data='join_game')]])
         )
 
-
-    elif query.data == 'ask_task':
-        # Тепер той, хто натиснув кнопку - запитувач
-        games[chat_id]["asker_id"] = user_id
-        kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
-        await query.message.edit_text("Обирай завдання для іншого гравця:", reply_markup=InlineKeyboardMarkup(kb))
-    
     elif query.data == 'join_game':
         game = games.get(chat_id)
         # Призначаємо того, хто натиснув кнопку, запитувачем
@@ -56,7 +49,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Гравець {update.effective_user.first_name} приєднався!\n"
             "Тепер можна починати:",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_task')]])
-        )
+
+    elif query.data == 'ask_task':
+        # Тепер той, хто натиснув кнопку - запитувач
+        games[chat_id]["asker_id"] = user_id
+        kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
+        await query.message.edit_text("Обирай завдання для іншого гравця:", reply_markup=InlineKeyboardMarkup(kb))
+    
 
 
     elif query.data in ['truth', 'dare']:
