@@ -5,12 +5,12 @@ from threading import Thread
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
+# Словник для зберігання гравців сесії: {chat_id: {"players": [], "asker_id": None, "status": "..."}}
+games = {}
+
 # --- Глобальні змінні (початок файлу, без відступів) ---
 logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
-games = {}
-
-# Словник для зберігання гравців сесії: {chat_id: {"players": [], "asker_id": None, "status": "..."}}
 games = {}
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
