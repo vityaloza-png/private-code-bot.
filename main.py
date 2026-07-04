@@ -1,18 +1,26 @@
-import sys
-import os
-sys.path.append(os.getcwd())
-
-from questions import truths, dares
-
 import random
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-from questions import truths, dares
 
-# Глобальні змінні для зберігання пари
+# --- НАЛАШТУВАННЯ ---
+TOKEN = "8671245475:AAFEslZmW0ih6hYQm0wupTd3SVqoyzdvFm8"
+
+# --- ПИТАННЯ ТА ДІЇ (Список тут) ---
+truths = [
+    "Яка твоя найтаємніша мрія?", "Який твій найбільший страх?", 
+    "Що ти першим ділом помітила в мені?", "Яка твоя найбільша таємниця?"
+]
+dares = [
+    "Зроби 20 присідань", "Напиши мені комплімент", 
+    "Затанцюй під першу-ліпшу пісню", "Зроби мені масаж 5 хвилин"
+]
+
+# --- ГЛОБАЛЬНІ ЗМІННІ (Кеш) ---
 waiting_player = None
 players_map = {}
 
+# --- ФУНКЦІЇ БОТА ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global waiting_player, players_map
     user_id = update.effective_user.id
@@ -44,6 +52,7 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if user_id in players_map:
         partner_id = players_map[user_id]
+        # Очищення пам'яті (кешу)
         del players_map[user_id]
         del players_map[partner_id]
         await update.message.reply_text("Гру зупинено. Кеш очищено.")
@@ -64,8 +73,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Помилка: партнер не знайдений. Натисніть /start")
         return
 
-    mode = query.data
-    if "far" in mode:
+    if "far" in query.data:
         text = f"Питання: {random.choice(truths)}"
         await context.bot.send_message(chat_id=partner_id, text=text)
         await query.edit_message_text("Питання успішно відправлено партнеру!")
@@ -73,8 +81,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"Завдання для вас двох:\n\n{random.choice(truths + dares)}"
         await query.edit_message_text(text)
 
-app = Application.builder().token("ТВІЙ_ТОКЕН").build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("stop", stop))
-app.add_handler(CallbackQueryHandler(button_handler))
-app.run_polling()
+# --- ЗАПУСК ---
+if __name__ == '__main__':
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("stop", stop))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    print("Бот запущений...")
+    app.run_polling()
