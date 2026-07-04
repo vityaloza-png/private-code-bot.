@@ -1,6 +1,5 @@
 import os
 import logging
-from flask import Flask
 from threading import Thread
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
@@ -72,17 +71,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Твоя правда: Розкажи про свій найнезручніший момент у житті.")
     elif query.data == 'dare':
         await query.message.reply_text("Твоя дія: Обійми людину, яка сидить найближче до тебе.")
-
-    # --- Flask-заглушка для Render ---
-server = Flask(__name__)
-@server.route('/')
-def index():
-    return "Бот активний!"
-
-def run_web():
-    port = int(os.environ.get("PORT", 8080))
-    server.run(host="0.0.0.0", port=port)
-
+        
     # --- Запуск ---
 if __name__ == '__main__':
     # Запуск веб-сервера в окремому потоці
@@ -94,5 +83,5 @@ if __name__ == '__main__':
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_callback))
     print(“Бот запускається…")
-    app.run_polling().
+    app.run_polling()
 
