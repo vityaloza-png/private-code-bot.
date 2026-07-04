@@ -1,6 +1,13 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
-import random
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+def run_http_server():
+    server = HTTPServer(('0.0.0.0', 8080), SimpleHTTPRequestHandler)
+    server.serve_forever()
+
+threading.Thread(target=run_http_server, daemon=True).start()
 
 # Встав сюди свій НОВИЙ токен (який ти отримав після /revoke)
 TOKEN = '8671245475:AAFEslZmW0ih6hYQm0wupTd3SVqoyzdvFm8'
