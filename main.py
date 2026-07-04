@@ -71,11 +71,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Твоя правда: Розкажи про свій найнезручніший момент у житті.")
     elif query.data == 'dare':
         await query.message.reply_text("Твоя дія: Обійми людину, яка сидить найближче до тебе.")
-        
-    # --- Запуск ---
-if __name__ == '__main__':
-    # Запуск веб-сервера в окремому потоці
-    Thread(target=run_web).start()
     
     # Запуск бота
     app = ApplicationBuilder().token(TOKEN).build()
