@@ -1,8 +1,7 @@
 import os
 import logging
-from threading import Thread
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
 # Словник для зберігання гравців сесії: {chat_id: {"players": [], "asker_id": None, "status": "..."}}
 games = {}
@@ -72,11 +71,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'dare':
         await query.message.reply_text("Твоя дія: Обійми людину, яка сидить найближче до тебе.")
     
-    # Запуск бота
+# Основний блок запуску
+if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN).build()
+    
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_callback))
-    print("Бот запускається…")
+    
+    print("Бот запускається...")
     app.run_polling()
-
