@@ -5,7 +5,7 @@ from threading import Thread
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# Словник для зберігання гравців сесії: {chat_id: {"players": [], "asker_id": None, "status": "..."}}
+    # Словник для зберігання гравців сесії: {chat_id: {"players": [], "asker_id": None, "status": "..."}}
 games = {}
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -14,17 +14,17 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
 
-# --- Налаштування ---
+    # --- Налаштування ---
 logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
 
     # 1. Початок гри (Створення сесії)
     if query.data == 'start_game':
         games[chat_id] = {"players": [user_id], "status": "waiting_for_second"}
-        await query.message.edit_text("Сесію створено! Чекаємо другого гравця.\nДругий гравець, натисни кнопку нижче!", 
+        await query.message.edit_text("Сесію створено! Чекаємо другого гравця.\nДругий гравець, натисни кнопку нижче!",
                                       reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися", callback_data='join_game')]]))
 
-# 2. Другий гравець приєднується
+    # 2. Другий гравець приєднується
     elif query.data == 'join_game':
         game = games.get(chat_id)
         if not game: return
@@ -37,7 +37,7 @@ TOKEN = os.environ.get("TOKEN")
         game["status"] = "idle"
         await query.message.edit_text("Гру    розпочато! Обидва гравці в мережі.", 
 
-# --- Меню та функції ---
+    # --- Меню та функції ---
 main_menu = ReplyKeyboardMarkup([
     ['🔥 Разом (Правда/Дія)', '🌐 На відстані (Тільки Правда)'],
     ['🔄 Перезапустити гру']
@@ -67,7 +67,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'dare':
         await query.message.reply_text("Твоя дія: Обійми людину, яка сидить найближче до тебе.")
 
-# --- Flask-заглушка для Render ---
+    # --- Flask-заглушка для Render ---
 server = Flask(__name__)
 @server.route('/')
 def index():
@@ -77,7 +77,7 @@ def run_web():
     port = int(os.environ.get("PORT", 8080))
     server.run(host="0.0.0.0", port=port)
 
-# --- Запуск ---
+    # --- Запуск ---
 if __name__ == '__main__':
     # Запуск веб-сервера в окремому потоці
     Thread(target=run_web).start()
