@@ -3,18 +3,18 @@ import logging
 import random
 from flask import Flask
 from threading import Thread
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- Налаштування ---
 logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
 
-# Стан гри: {chat_id: {"mode": "...", "status": "...", "last_task": "..."}}
+# Стан гри: {chat_id: {"mode": "...", "status": "...", "asker_id": id}}
 games = {}
 
 QUESTIONS = ["Найнезручніший момент у житті?", "Твоя найбільша мрія?", "Чого ти боїшся найбільше?"]
-DARES = ["Обійми людину поруч", "Зроби 5 присідань", "Розкажи секрет"]
+DARES = ["Обійми людину поруч", "Зроби 5 присідань", "Розкажи свій секрет"]
 
 # --- Меню ---
 def get_main_menu():
@@ -29,39 +29,49 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
     await query.answer()
 
     if query.data.startswith('mode_'):
         mode = query.data.split('_')[1]
-        games[chat_id] = {"mode": mode, "status": "idle"}
+        games[chat_id] = {"mode": mode, "status": "idle", "asker_id": user_id}
         
         if mode == "together":
             kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
-            await query.message.edit_text("Режим 'Разом'. Обирай:", reply_markup=InlineKeyboardMarkup(kb))
+            await query.message.edit_text("Режим 'Разом'. Перший гравець, обирай завдання:", reply_markup=InlineKeyboardMarkup(kb))
         else:
-            await query.message.edit_text("Режим 'На відстані'. Натисни, щоб отримати питання:", 
+            await query.message.edit_text("Режим 'На відстані'. Натисни кнопку, щоб отримати питання:", 
                                           reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_question')]]))
 
-    elif query.data in ['truth', 'dare']:
-        task = random.choice(QUESTIONS if query.data == 'truth' else DARES)
-        games[chat_id]["status"] = "waiting_for_answer"
-        games[chat_id]["last_task"] = task
-        await query.message.edit_text(f"Завдання: {task}\n\n👉 Напиши свою відповідь:")
-
-    elif query.data == 'ask_question':
-        task = random.choice(QUESTIONS)
-        games[chat_id]["status"] = "waiting_for_answer"
-        await query.message.edit_text(f"❓ Питання: {task}\n\n👉 Напиши свою відповідь:")
+    elif query.data in ['truth', 'dare', 'ask_question']:
+        game = games.get(chat_id)
+        if not game: return
+        
+        game["status"] = "waiting_for_answer"
+        game["asker_id"] = user_id # Оновлюємо того, хто щойно запитав
+        task = random.choice(QUESTIONS) if query.data != 'dare' else random.choice(DARES)
+        
+        # Видаляємо кнопки, щоб відкрити поле вводу
+        await query.message.edit_text(f"❓ {task}\n\n👉 *Очікуємо відповідь від іншого гравця...*", reply_markup=None)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    text = update.message.text
+    user_id = update.effective_user.id
     game = games.get(chat_id)
 
-    if game and game.get("status") == "waiting_for_answer":
-        game["status"] = "idle"
-        kb = [[InlineKeyboardButton("🔄 Запитати знову", callback_data='ask_question' if game["mode"] == "distance" else 'mode_together')]]
-        await update.message.reply_text(f"✅ Прийнято: {text}", reply_markup=InlineKeyboardMarkup(kb))
+    if not game or game.get("status") != "waiting_for_answer":
+        return
+
+    # Сувора перевірка: чи не сам гравець собі відповідає
+    if user_id == game["asker_id"]:
+        await update.message.reply_text("⛔️ Ти не можеш відповідати на власне питання!")
+        return
+
+    # Відповідь прийнято
+    game["status"] = "idle"
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Запитати знову", callback_data='ask_question' if game["mode"] == 'distance' else 'mode_together')]])
+    
+    await update.message.reply_text(f"✅ Відповідь прийнято: {update.message.text}", reply_markup=kb)
 
 # --- Flask для Render ---
 server = Flask(__name__)
@@ -69,12 +79,16 @@ server = Flask(__name__)
 def index(): return "Бот активний!"
 
 def run_web():
-    server.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    port = int(os.environ.get("PORT", 8080))
+    server.run(host="0.0.0.0", port=port)
 
+# --- Запуск ---
 if __name__ == '__main__':
     Thread(target=run_web).start()
     app = ApplicationBuilder().token(TOKEN).build()
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
     app.run_polling()
