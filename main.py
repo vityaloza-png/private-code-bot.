@@ -31,17 +31,33 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
 
-    if query.data.startswith('mode_'):
-        mode = query.data.split('_')[1]
-        games[chat_id] = {"mode": mode, "asker_id": user_id, "status": "idle"}
-        await query.message.edit_text(f"Режим '{mode}'. Чекаю на вибір завдання...", 
-                                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_task')]]))
+        if query.data == 'mode_distance':
+        # Створюємо сесію, але поки ніхто не "Запитувач"
+        games[chat_id] = {"mode": "distance", "status": "waiting_for_second_player", "asker_id": None}
+        await query.message.edit_text(
+            "🌐 Режим 'На відстані'.\n\nГра створена! Чекаємо другого гравця.\n"
+            "Другий гравець, натисни кнопку, щоб увійти в гру!",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися до гри", callback_data='join_game')]])
+        )
+
 
     elif query.data == 'ask_task':
         # Тепер той, хто натиснув кнопку - запитувач
         games[chat_id]["asker_id"] = user_id
         kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
         await query.message.edit_text("Обирай завдання для іншого гравця:", reply_markup=InlineKeyboardMarkup(kb))
+    
+    elif query.data == 'join_game':
+        game = games.get(chat_id)
+        # Призначаємо того, хто натиснув кнопку, запитувачем
+        game["asker_id"] = user_id
+        game["status"] = "idle"
+        await query.message.edit_text(
+            f"Гравець {update.effective_user.first_name} приєднався!\n"
+            "Тепер можна починати:",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_task')]])
+        )
+
 
     elif query.data in ['truth', 'dare']:
         games[chat_id]["status"] = "waiting_for_answer"
