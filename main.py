@@ -1,24 +1,20 @@
 import os
 import logging
 import random
-from flask import Flask
-from threading import Thread
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
 
-# Стан: {chat_id: {"mode": "...", "asker_id": id, "status": "..."}}
 games = {}
 
 QUESTIONS = ["Найнезручніший момент?", "Твоя мрія?", "Чого ти боїшся?"]
 DARES = ["Обійми сусіда", "Зроби 5 присідань", "Розкажи секрет"]
 
-# --- Меню ---
 def get_main_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔥 Разом (Правда/Дія)", callback_data='mode_together')],
+        [InlineKeyboardButton("🔥 Разом", callback_data='mode_together')],
         [InlineKeyboardButton("🌐 На відстані", callback_data='mode_distance')]
     ])
 
@@ -30,38 +26,41 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     await query.answer()
-
+    
+    # 1. Режим 'На відстані'
     if query.data == 'mode_distance':
-        # Створюємо сесію, але поки ніхто не "Запитувач"
         games[chat_id] = {"mode": "distance", "status": "waiting_for_second_player", "asker_id": None}
         await query.message.edit_text(
             "🌐 Режим 'На відстані'.\n\nГра створена! Чекаємо другого гравця.\n"
             "Другий гравець, натисни кнопку, щоб увійти в гру!",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися до гри", callback_data='join_game')]]))
 
-
+    # 2. Приєднання до гри
     elif query.data == 'join_game':
         game = games.get(chat_id)
-        # Призначаємо того, хто натиснув кнопку, запитувачем
-        game["asker_id"] = user_id
-        game["status"] = "idle"
-        await query.message.edit_text(
-            f"Гравець {update.effective_user.first_name} приєднався!\n"
-            "Тепер можна починати:",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_task')]])
+        if game:
+            game["asker_id"] = user_id
+            game["status"] = "idle"
+            await query.message.edit_text(
+                f"Гравець {update.effective_user.first_name} приєднався!\n"
+                "Тепер можна починати:",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❓ Запитати", callback_data='ask_task')]]))
 
+    # 3. Вибір типу завдання
     elif query.data == 'ask_task':
-        # Тепер той, хто натиснув кнопку - запитувач
-        games[chat_id]["asker_id"] = user_id
-        kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
-        await query.message.edit_text("Обирай завдання для іншого гравця:", reply_markup=InlineKeyboardMarkup(kb))
-    
+        game = games.get(chat_id)
+        if game:
+            game["asker_id"] = user_id
+            kb = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
+            await query.message.edit_text("Обирай завдання для іншого гравця:", reply_markup=InlineKeyboardMarkup(kb))
 
-
+    # 4. Обробка вибраного завдання
     elif query.data in ['truth', 'dare']:
-        games[chat_id]["status"] = "waiting_for_answer"
-        task = random.choice(QUESTIONS if query.data == 'truth' else DARES)
-        await query.message.edit_text(f"❓ {task}\n\n👉 *Чекаємо відповідь від іншого гравця...*", reply_markup=None)
+        game = games.get(chat_id)
+        if game:
+            game["status"] = "waiting_for_answer"
+            task = random.choice(QUESTIONS if query.data == 'truth' else DARES)
+            await query.message.edit_text(f"❓ {task}\n\n👉 *Чекаємо відповідь від іншого гравця...*")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -77,10 +76,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Відповідь отримана
     game["status"] = "idle"
-    # Міняємо ролі: тепер той, хто відповідав, стає головним для вибору наступного кроку
     game["asker_id"] = user_id 
     
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Наступне запитання", callback_data='ask_task')]])
     await update.message.reply_text(f"✅ Відповідь прийнято: {update.message.text}\n\nТепер черга {update.effective_user.first_name} задавати питання!", reply_markup=kb)
-
-# --- Flask та Запуск (як раніше) ---
