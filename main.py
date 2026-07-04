@@ -14,6 +14,11 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await query.answer()
 
+# --- Глобальні змінні (початок файлу, без відступів) ---
+logging.basicConfig(level=logging.INFO)
+TOKEN = os.environ.get("TOKEN")
+games = {}
+
     # 1. Початок гри (Створення сесії)
     if query.data == 'start_game':
         games[chat_id] = {"players": [user_id], "status": "waiting_for_second"}
