@@ -39,7 +39,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(f"🌡 Рівень збудження: {level}/5")
 
 if __name__ == '__main__':
-    # 8671245475:AAFEslZmW0ih6hYQm0wupTd3SVqoyzdvFm8Вставте сюди свій токен
+    # 8857921196:AAFeu3bG_Sr9050coijFk7yjrZdmu6I0INE
     app = ApplicationBuilder().token("ВАШ_ТОКЕН_БОТА").build()
     
     app.add_handler(CommandHandler("start", start))
