@@ -42,38 +42,6 @@ async def button_callback(update, context):
             await context.bot.send_message(player1, "Знайдено суперника! Гра починається.")
             await context.bot.send_message(player2, "Знайдено суперника! Гра починається.")
 
-       # Глобальні змінні
-    waiting_players = []  
-       # Список тих, хто чекає на гру
-     games = {}            # Активні ігри
-
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user = update.effective_user
-    await query.answer()
-
-    if query.data == 'join_game':
-        # Якщо гравець вже в черзі — ігноруємо
-        if user.id in waiting_players:
-            await query.edit_message_text("Ви вже в черзі, чекаємо іншого гравця...")
-            return
-
-        waiting_players.append(user.id)
-        await query.edit_message_text("Ви в черзі! Чекаємо на суперника...")
-
-    # Якщо в черзі двоє — з'єднуємо їх
-    if len(waiting_players) >= 2:
-            player1 = waiting_players.pop(0)
-            player2 = waiting_players.pop(0)
-            
-            # Створюємо гру для цих двох ID
-            game_id = f"game_{player1}_{player2}"
-            games[game_id] = {"players": [player1, player2]}
-            
-            # Повідомляємо обох
-            await context.bot.send_message(player1, "Знайдено суперника! Гра починається.")
-            await context.bot.send_message(player2, "Знайдено суперника! Гра починається.")
-
     # --- Меню та функції ---
 main_menu = ReplyKeyboardMarkup([
     ['🔥 Разом (Правда/Дія)', '🌐 На відстані (Тільки Правда)'],
