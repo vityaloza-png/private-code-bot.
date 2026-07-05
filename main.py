@@ -11,35 +11,38 @@ logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
 games = {}
 
+
+       а # Глобальні змінні
+    waiting_players = []  
+       # Список тих, хто чекає на гру
+     games = {}            # Активні ігри
+
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    chat_id = update.effective_chat.id
-    user_id = update.effective_user.id
+    user = update.effective_user
     await query.answer()
 
-    # 1. Початок гри (Створення сесії)
-    if query.data == 'start_game':
-        games[chat_id] = {"players": [user_id], "status": "waiting_for_second"}
-        await query.message.edit_text(
-            "Сесію створено! Чекаємо другого гравця.\nДругий гравець, натисни кнопку нижче!",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Приєднатися", callback_data='join_game')]])
-        )
-    elif query.data == 'join_game':
-        game = games.get(chat_id)
-
-
-    # 2. Другий гравець приєднується
-    elif query.data == 'join_game':
-        game = games.get(chat_id)
-        if not game: return
-        
-        if user_id in game["players"]:
-            await query.answer("Ти вже в грі!")
+    if query.data == 'join_game':
+        # Якщо гравець вже в черзі — ігноруємо
+        if user.id in waiting_players:
+            await query.edit_message_text("Ви вже в черзі, чекаємо іншого гравця...")
             return
+
+        waiting_players.append(user.id)
+        await query.edit_message_text("Ви в черзі! Чекаємо на суперника...")
+
+        # Якщо в черзі двоє — з'єднуємо їх
+        if len(waiting_players) >= 2:
+            player1 = waiting_players.pop(0)
+            player2 = waiting_players.pop(0)
             
-        game["players"].append(user_id)
-        game["status"] = "idle"
-        await query.message.edit_text("Гру    розпочато! Обидва гравці в мережі.",) 
+            # Створюємо гру для цих двох ID
+            game_id = f"game_{player1}_{player2}"
+            games[game_id] = {"players": [player1, player2]}
+            
+            # Повідомляємо обох
+            await context.bot.send_message(player1, "Знайдено суперника! Гра починається.")
+            await context.bot.send_message(player2, "Знайдено суперника! Гра починається.")
 
     # --- Меню та функції ---
 main_menu = ReplyKeyboardMarkup([
