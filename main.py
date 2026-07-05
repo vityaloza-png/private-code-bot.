@@ -11,8 +11,6 @@ logging.basicConfig(level=logging.INFO)
 TOKEN = os.environ.get("TOKEN")
 games = {}
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
 # Список, де будуть зберігатися ID гравців, що чекають
 waiting_players = []
 
