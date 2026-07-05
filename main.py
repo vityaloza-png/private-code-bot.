@@ -42,7 +42,7 @@ async def button_callback(update, context):
             await context.bot.send_message(player1, "Знайдено суперника! Гра починається.")
             await context.bot.send_message(player2, "Знайдено суперника! Гра починається.")
 
-       а # Глобальні змінні
+       # Глобальні змінні
     waiting_players = []  
        # Список тих, хто чекає на гру
      games = {}            # Активні ігри
