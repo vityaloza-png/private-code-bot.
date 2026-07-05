@@ -41,36 +41,6 @@ async def button_callback(update, context):
             # Повідомляємо обох про початок гри
             await context.bot.send_message(player1, "Знайдено суперника! Гра починається.")
             await context.bot.send_message(player2, "Знайдено суперника! Гра починається.")
-
-    # --- Меню та функції ---
-main_menu = ReplyKeyboardMarkup([
-    ['🔥 Разом (Правда/Дія)', '🌐 На відстані (Тільки Правда)'],
-    ['🔄 Перезапустити гру']
-], resize_keyboard=True)
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Вітаю! Обирай режим гри нижче:", reply_markup=main_menu)
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if text == '🌐 На відстані (Тільки Правда)':
-        keyboard = [[InlineKeyboardButton(str(i), callback_data=f'rate_{i}') for i in range(1, 6)]]
-        await update.message.reply_text("🔥 Завдання: Твоя найтаємніша мрія?\n\nОціни реакцію:", reply_markup=InlineKeyboardMarkup(keyboard))
-    elif text == '🔥 Разом (Правда/Дія)':
-        keyboard = [[InlineKeyboardButton("Правда", callback_data='truth'), InlineKeyboardButton("Дія", callback_data='dare')]]
-        await update.message.reply_text("Обирай:", reply_markup=InlineKeyboardMarkup(keyboard))
-    elif text == '🔄 Перезапустити гру':
-        await update.message.reply_text("Гру перезапущено! Обирай режим:", reply_markup=main_menu)
-
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    if query.data.startswith('rate_'):
-        await query.message.reply_text(f"🌡 Рівень збудження: {query.data.split('_')[1]}/5")
-    elif query.data == 'truth':
-        await query.message.reply_text("Твоя правда: Розкажи про свій найнезручніший момент у житті.")
-    elif query.data == 'dare':
-        await query.message.reply_text("Твоя дія: Обійми людину, яка сидить найближче до тебе.")
     
 # Основний блок запуску
 if __name__ == '__main__':
